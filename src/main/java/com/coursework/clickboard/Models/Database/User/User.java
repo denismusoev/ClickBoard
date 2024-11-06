@@ -1,7 +1,6 @@
 package com.coursework.clickboard.Models.Database.User;
 
 import com.coursework.clickboard.Models.DTO.User.SignUpDTO;
-import com.coursework.clickboard.Models.Database.Order.Order;
 import com.coursework.clickboard.Models.Database.ShoppingCart.ShoppingCart;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -71,14 +70,6 @@ public class User{
     @OneToOne(cascade = CascadeType.ALL)
     private ShoppingCart shoppingCart = new ShoppingCart();
 
-    @JoinColumn(name = "user_id")
-    @OneToMany()
-    private List<Order> orderList = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user")
-    private List<Notification> notificationList = new ArrayList<>();
-
-
     public User(){
 
     }
@@ -107,8 +98,6 @@ public class User{
         this.isChildModeEnabled = user.isChildModeEnabled();
         this.areNotificationsEnabled = user.isAreNotificationsEnabled();
         this.shoppingCart = user.getShoppingCart();
-        this.orderList = user.getOrderList();
-        this.notificationList = user.getNotificationList();
     }
 
     public int getId() {
@@ -229,37 +218,5 @@ public class User{
 
     public void setShoppingCart(ShoppingCart shoppingCart) {
         this.shoppingCart = shoppingCart;
-    }
-
-    public List<Order> getOrderList() {
-        return orderList;
-    }
-
-    public void setOrderList(List<Order> orderList) {
-        this.orderList = orderList;
-    }
-
-    public void addToOrderList(Order order) {
-        this.orderList.add(order);
-    }
-
-    public void removeFromToOrderList(Order order) {
-        this.orderList.removeIf(item -> item.getId() == order.getId());
-    }
-
-    public List<Notification> getNotificationList() {
-        return notificationList;
-    }
-
-    public void setNotificationList(List<Notification> notificationList) {
-        this.notificationList = notificationList;
-    }
-
-    public void addToNotificationList(Notification notification) {
-        this.notificationList.add(notification);
-    }
-
-    public void removeFromNotificationList(Notification notification) {
-        this.notificationList.removeIf(item -> item.getId() == notification.getId());
     }
 }

@@ -1,7 +1,7 @@
 package com.coursework.clickboard.Services;
 
 import com.coursework.clickboard.Models.DTO.ShopCart.CartItemViewDTO;
-import com.coursework.clickboard.Models.DTO.Vk.ApiResponse;
+import com.coursework.clickboard.Models.DTO.ApiResponse;
 import com.coursework.clickboard.Models.Database.Product.Product;
 import com.coursework.clickboard.Models.Database.ShoppingCart.CartItem;
 import com.coursework.clickboard.Models.Database.ShoppingCart.ShoppingCart;
@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -60,9 +61,9 @@ public class ShoppingCartService {
         int cartId = shoppCart.getId();
 
         Optional<ShoppingCart> optCart = shoppingCartRepository.findById(cartId);
-        ShoppingCart cart = optCart.orElseThrow(() -> new ResourceNotFoundException("Ошибка удаления из корзины"));
+        ShoppingCart cart = optCart.orElseThrow(() -> new BadCredentialsException("Ошибка удаления из корзины"));
         List<CartItem> cartItems = cart.getCartItems();
-        CartItem cartItem = cartItems.stream().filter(item -> item.getProduct().getId() == productId).findFirst().orElseThrow(() -> new ResourceNotFoundException("Товар не найнден в корзине"));
+        CartItem cartItem = cartItems.stream().filter(item -> item.getProduct().getId() == productId).findFirst().orElseThrow(() -> new BadCredentialsException("Товар не найнден в корзине"));
         cart.removeFromCartItems(cartItem);
         cartItemRepository.delete(cartItem);
         shoppingCartRepository.save(cart);
@@ -73,7 +74,7 @@ public class ShoppingCartService {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = userService.getByUsername(userDetails.getUsername());
         ShoppingCart shoppCart = user.getShoppingCart();
-        ShoppingCart cart = shoppingCartRepository.findById(shoppCart.getId()).orElseThrow(() -> new ResourceNotFoundException("Не удалось изменить количество"));
+        ShoppingCart cart = shoppingCartRepository.findById(shoppCart.getId()).orElseThrow(() -> new BadCredentialsException("Не удалось изменить количество"));
         int quantity = cart.reduceProductQuantity(productId);
         if (quantity == 0){
             return removeFromCart(productId);
@@ -86,7 +87,7 @@ public class ShoppingCartService {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = userService.getByUsername(userDetails.getUsername());
         ShoppingCart shoppCart = user.getShoppingCart();
-        ShoppingCart cart = shoppingCartRepository.findById(shoppCart.getId()).orElseThrow(() -> new ResourceNotFoundException("Не удалось изменить количество"));
+        ShoppingCart cart = shoppingCartRepository.findById(shoppCart.getId()).orElseThrow(() -> new BadCredentialsException("Не удалось изменить количество"));
         cart.increseProductQuantity(productId);
         shoppingCartRepository.save(cart);
         return new ApiResponse(true, "Успешно"){};

@@ -2,8 +2,6 @@ package com.coursework.clickboard.Models.Database.Product;
 
 import com.coursework.clickboard.Models.DTO.Product.ProductNestedDTO;
 import com.coursework.clickboard.Models.DTO.Product.ProductViewDTO;
-import com.coursework.clickboard.Models.Database.Order.OrderItem;
-import com.coursework.clickboard.Models.Database.Store.StoreItem;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
@@ -42,24 +40,7 @@ public class Product {
     private Category category;
 
     @OneToMany(mappedBy = "product")
-    private List<StoreItem> storeList = new ArrayList<>();
-
-    @OneToMany(mappedBy = "product")
-    private List<OrderItem> orderItems = new ArrayList<>();
-
-    @OneToMany(mappedBy = "product")
     private List<ProductAttribute> productAttributes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Review> reviewList = new ArrayList<>();
-
-    @ManyToMany(cascade = {CascadeType.ALL})
-    @JoinTable(
-            name = "product_discount",
-            joinColumns = {@JoinColumn(name = "product_id")},
-            inverseJoinColumns = {@JoinColumn(name = "discount_id")}
-    )
-    private List<Discount> discountList = new ArrayList<>();
 
     public Product() {
 
@@ -132,14 +113,6 @@ public class Product {
         this.image = image;
     }
 
-    public List<Discount> getDiscountList() {
-        return discountList;
-    }
-
-    public void setDiscountList(List<Discount> discountList) {
-        this.discountList = discountList;
-    }
-
     public Category getCategory() {
         return category;
     }
@@ -148,44 +121,12 @@ public class Product {
         this.category = category;
     }
 
-    public List<StoreItem> getStoreList() {
-        return storeList;
-    }
-
-    public void setStoreList(List<StoreItem> storeProducts) {
-        this.storeList = storeProducts;
-    }
-
-    public List<OrderItem> getOrderItems() {
-        return orderItems;
-    }
-
-    public void setOrderItems(List<OrderItem> orderItems) {
-        this.orderItems = orderItems;
-    }
-
-    public void addToOrderItems(OrderItem orderItem) {
-        this.orderItems.add(orderItem);
-    }
-
-    public void removeFromOrderItems(OrderItem orderItem) {
-        this.orderItems.removeIf(item -> item.getId() == orderItem.getId());
-    }
-
     public List<ProductAttribute> getProductAttributes() {
         return productAttributes;
     }
 
     public void setProductAttributes(List<ProductAttribute> productAttributes) {
         this.productAttributes = productAttributes;
-    }
-
-    public List<Review> getReviewList() {
-        return reviewList;
-    }
-
-    public void setReviewList(List<Review> reviewList) {
-        this.reviewList = reviewList;
     }
 
     //

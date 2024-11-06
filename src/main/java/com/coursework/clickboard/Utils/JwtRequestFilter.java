@@ -1,13 +1,15 @@
 package com.coursework.clickboard.Utils;
 
-import com.coursework.clickboard.Exceptions.CustomExceptions.AuthenticationFailureException;
 import com.coursework.clickboard.Services.UserService;
+import jakarta.security.auth.message.AuthException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -47,7 +49,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
             }
             else{
-                throw new AuthenticationFailureException("Истек сеанс. Войдите заново");
+                throw new BadCredentialsException("Истек сеанс. Войдите заново");
             }
         }
         chain.doFilter(request, response);

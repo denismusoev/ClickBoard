@@ -1,18 +1,16 @@
 package com.coursework.clickboard.Services;
-import com.coursework.clickboard.Models.DTO.Vk.SignInDTO;
-import com.coursework.clickboard.Exceptions.CustomExceptions.AuthenticationFailureException;
 import com.coursework.clickboard.Utils.JwtUtil;
 import com.coursework.clickboard.Models.Database.User.TwoFactorCodeDTO;
 import com.coursework.clickboard.Models.Database.User.User;
-import com.coursework.clickboard.Models.DTO.Vk.ApiResponse;
+import com.coursework.clickboard.Models.DTO.ApiResponse;
 import com.coursework.clickboard.Models.DTO.User.UserTokenDTO;
-import com.coursework.clickboard.Models.DTO.Vk.VkUserPartialDTO;
 import com.coursework.clickboard.Utils.PasswordGenerator;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -50,60 +48,60 @@ public class AuthService{
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
-    @Async("taskExecutor")
-    public CompletableFuture<ApiResponse> exchangeAndRetrieveProfile(String silentToken, String uuid) {
-        return apiService.exchangeSilentAuthToken(silentToken, uuid)
-                .thenCompose(vkApiResponse -> {
-                    Optional<User> user = userService.getByVkId(vkApiResponse.getResponse().getUserId());
-                    if (user.isPresent()) {
-                        return authenticateUser(new SignInDTO(vkApiResponse.getResponse().getUserId()));
-                    }
-                    return apiService.getProfileInfo(vkApiResponse.getResponse().getAccessToken())
-                            .thenApply(profileInfo -> new VkUserPartialDTO(
-                                    vkApiResponse.getResponse().getUserId(),
-                                    profileInfo.getResponse().get(0).getFirstName(),
-                                    profileInfo.getResponse().get(0).getLastName(),
-                                    true,
-                                    "User data"
-                            ));
-                })
-                .exceptionally(e -> {
-                    throw new CompletionException(new AuthenticationFailureException(e.getMessage()));
-                });
-    }
-
-    @Async("taskExecutor")
-    public CompletableFuture<ApiResponse> authenticateUser(SignInDTO request) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                UserDetails userDetails;
-                User user;
-                boolean isVk = false;
-                if (request.getVkId() != 0) {
-                    Optional<User> findUser = userService.getByVkId(request.getVkId());
-                    isVk = true;
-                    if (findUser.isEmpty()) throw new UsernameNotFoundException("Пользователь с таким vkId не найден.");
-                    else user = findUser.get();
-                } else {
-                    try{
-                        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-                    } catch (Exception e){
-                        throw new AuthenticationFailureException("Неверный логин или пароль");
-                    }
-                    user = userService.getByUsername(request.getUsername());
-
-                    if (user.isTwoFactorEnabled()) {
-                        generateAndSend2FACode(user.getUsername());
-                        return new ApiResponse(true,"Код 2FA отправлен на ваш электронный адрес. Пожалуйста, подтвердите, чтобы завершить авторизацию."){};
-                    }
-                }
-                userDetails = userService.loadUserByUsername(user.getUsername());
-                return new UserTokenDTO(jwtUtil.generateToken(userDetails), user.getUsername(), true, "token", user.isChildModeEnabled(), isVk);
-            } catch (Exception e) {
-                throw new CompletionException(new AuthenticationFailureException(e.getMessage()));
-            }
-        });
-    }
+//    @Async("taskExecutor")
+//    public CompletableFuture<ApiResponse> exchangeAndRetrieveProfile(String silentToken, String uuid) {
+//        return apiService.exchangeSilentAuthToken(silentToken, uuid)
+//                .thenCompose(vkApiResponse -> {
+//                    Optional<User> user = userService.getByVkId(vkApiResponse.getResponse().getUserId());
+//                    if (user.isPresent()) {
+//                        return authenticateUser(new SignInDTO(vkApiResponse.getResponse().getUserId()));
+//                    }
+//                    return apiService.getProfileInfo(vkApiResponse.getResponse().getAccessToken())
+//                            .thenApply(profileInfo -> new VkUserPartialDTO(
+//                                    vkApiResponse.getResponse().getUserId(),
+//                                    profileInfo.getResponse().get(0).getFirstName(),
+//                                    profileInfo.getResponse().get(0).getLastName(),
+//                                    true,
+//                                    "User data"
+//                            ));
+//                })
+//                .exceptionally(e -> {
+//                    throw new CompletionException(new AuthenticationFailureException(e.getMessage()));
+//                });
+//    }
+//
+//    @Async("taskExecutor")
+//    public CompletableFuture<ApiResponse> authenticateUser(SignInDTO request) {
+//        return CompletableFuture.supplyAsync(() -> {
+//            try {
+//                UserDetails userDetails;
+//                User user;
+//                boolean isVk = false;
+//                if (request.getVkId() != 0) {
+//                    Optional<User> findUser = userService.getByVkId(request.getVkId());
+//                    isVk = true;
+//                    if (findUser.isEmpty()) throw new UsernameNotFoundException("Пользователь с таким vkId не найден.");
+//                    else user = findUser.get();
+//                } else {
+//                    try{
+//                        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+//                    } catch (Exception e){
+//                        throw new AuthenticationFailureException("Неверный логин или пароль");
+//                    }
+//                    user = userService.getByUsername(request.getUsername());
+//
+//                    if (user.isTwoFactorEnabled()) {
+//                        generateAndSend2FACode(user.getUsername());
+//                        return new ApiResponse(true,"Код 2FA отправлен на ваш электронный адрес. Пожалуйста, подтвердите, чтобы завершить авторизацию."){};
+//                    }
+//                }
+//                userDetails = userService.loadUserByUsername(user.getUsername());
+//                return new UserTokenDTO(jwtUtil.generateToken(userDetails), user.getUsername(), true, "token", user.isChildModeEnabled(), isVk);
+//            } catch (Exception e) {
+//                throw new CompletionException(new AuthenticationFailureException(e.getMessage()));
+//            }
+//        });
+//    }
 
     public ApiResponse validateAndGenerateJwt(TwoFactorCodeDTO twoFactorCodeDTO) throws Exception {
         User user = userService.getByUsername(twoFactorCodeDTO.getUsername());
@@ -116,9 +114,9 @@ public class AuthService{
                 UserDetails userDetails = new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
                 return new UserTokenDTO(jwtUtil.generateToken(userDetails), user.getUsername(), true, "2FA код успешно подтвержден.", user.isChildModeEnabled(), user.getVkId() != null);
             } else {
-                throw new AuthenticationFailureException("Неверный 2FA код.");
+                throw new BadCredentialsException("Неверный 2FA код.");
             }
-        } catch (AuthenticationFailureException e) {
+        } catch (BadCredentialsException e) {
             throw e;
         } catch (Exception e) {
             throw new Exception("Ошибка при генерации JWT: " + e.getMessage(), e);

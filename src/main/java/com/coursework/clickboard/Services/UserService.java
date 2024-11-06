@@ -1,21 +1,20 @@
 package com.coursework.clickboard.Services;
 
-import com.coursework.clickboard.Exceptions.CustomExceptions.RegistrationFailureException;
+import com.coursework.clickboard.Models.DTO.ApiResponse;
 import com.coursework.clickboard.Models.DTO.User.PasswordUpdateDTO;
 import com.coursework.clickboard.Models.DTO.User.UpdateSettingsDTO;
 import com.coursework.clickboard.Models.DTO.User.SignUpDTO;
 import com.coursework.clickboard.Models.DTO.User.UserUpdateDTO;
-import com.coursework.clickboard.Models.Database.Order.Order;
 import com.coursework.clickboard.Models.Database.ShoppingCart.ShoppingCart;
 import com.coursework.clickboard.Models.Database.User.User;
 import com.coursework.clickboard.Models.Database.Product.Product;
-import com.coursework.clickboard.Models.DTO.Vk.ApiResponse;
 import com.coursework.clickboard.Repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -43,10 +42,10 @@ public class UserService implements UserDetailsService {
     public void registerUser(SignUpDTO signUpDTO) {
         User newUser = new User();
         if (userRepository.findByUsername(signUpDTO.getUsername()).isPresent()) {
-            throw new RegistrationFailureException("Пользователь с таким логином уже существует");
+            throw new BadCredentialsException("Пользователь с таким логином уже существует");
         }
         else if (userRepository.findByEmail(signUpDTO.getEmail()) != null){
-            throw new RegistrationFailureException("Пользователь с такой почтой уже существует");
+            throw new BadCredentialsException("Пользователь с такой почтой уже существует");
         }
         if (signUpDTO.getVkId() != 0) {
             newUser.setVkId(signUpDTO.getVkId());
@@ -65,12 +64,6 @@ public class UserService implements UserDetailsService {
         Optional<User> findUser = userRepository.findByUsername(username);
         User user = findUser.orElseThrow(() -> new Exception("Не удалось загрузить данные корзины"));
         return user.getShoppingCart();
-    }
-
-    public List<Order> getOrders(String username) throws Exception {
-        Optional<User> findUser = userRepository.findByUsername(username);
-        User user = findUser.orElseThrow(() -> new Exception("Не удалось загрузить заказы"));
-        return user.getOrderList();
     }
 
     public void update(User user) throws Exception {
@@ -115,7 +108,7 @@ public class UserService implements UserDetailsService {
             update(user);
             return new ApiResponse(true, "Данные успешно изменены"){};
         }
-        throw new InvalidRequestException("Неверный пароль");
+        throw new BadCredentialsException("Неверный пароль");
 
     }
 
@@ -127,7 +120,7 @@ public class UserService implements UserDetailsService {
             update(user);
             return new ApiResponse(true, "Пароль успешно изменен"){};
         }
-        throw new InvalidRequestException("Неверный пароль");
+        throw new BadCredentialsException("Неверный пароль");
     }
 
     public ApiResponse settingChildMode(UpdateSettingsDTO updateSettingsDTO) throws Exception {
@@ -141,7 +134,7 @@ public class UserService implements UserDetailsService {
             update(user);
             return apiResponse;
         }
-        throw new InvalidRequestException("Неверный пароль");
+        throw new BadCredentialsException("Неверный пароль");
     }
 
     public ApiResponse settingTwoFactorAuth(UpdateSettingsDTO updateSettingsDTO) throws Exception {
@@ -157,7 +150,7 @@ public class UserService implements UserDetailsService {
             update(user);
             return apiResponse;
         }
-        throw new InvalidRequestException("Неверный пароль");
+        throw new BadCredentialsException("Неверный пароль");
     }
 
     public void addBonuses(User user, int bonus){
@@ -172,21 +165,6 @@ public class UserService implements UserDetailsService {
         return userRepository.findByVkId(vkId);
     }
 
-    public ApiResponse settingNotifications(UpdateSettingsDTO updateSettingsDTO) throws Exception {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow(() -> new UsernameNotFoundException("Не удалось настроить уведомления"));
-
-        if (passwordEncoder.matches(updateSettingsDTO.getPassword(), user.getPassword())) {
-            ApiResponse apiResponse = new ApiResponse(true, ""){};
-            if (user.isAreNotificationsEnabled()) apiResponse.setMessage("Рассылки выключены");
-            else apiResponse.setMessage("Рассылки включены");
-
-            user.setAreNotificationsEnabled(!user.isAreNotificationsEnabled());
-            update(user);
-            return apiResponse;
-        }
-        throw new InvalidRequestException("Неверный пароль");
-    }
 
     public ApiResponse containsInCart(int productId) throws Exception {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -197,22 +175,6 @@ public class UserService implements UserDetailsService {
             return new ApiResponse(true, "Cart contain the product") {};
         } else {
             return new ApiResponse(false, "Cart not contain the product") {};
-        }
-    }
-
-    public ApiResponse checkingForReview(int productId) throws Exception {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = getByUsername(userDetails.getUsername());
-        Product product = productService.getById(productId);
-        List<Review> reviews = product.getReviewList();
-        Optional<Review> optionalReview = reviews.stream()
-                .filter(item -> item.getUser().getId() == user.getId())
-                .findFirst();
-
-        if (optionalReview.isPresent()) {
-            return new ApiResponse(true, String.valueOf(optionalReview.get().getId())){};
-        } else {
-            return new ApiResponse(true, "0"){};
         }
     }
 

@@ -1,7 +1,7 @@
 package com.coursework.clickboard.Models.DTO.User;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.coursework.clickboard.Models.DTO.Vk.ApiResponse;
+import com.coursework.clickboard.Models.DTO.ApiResponse;
 
 public class UserTokenDTO extends ApiResponse {
     private String token;

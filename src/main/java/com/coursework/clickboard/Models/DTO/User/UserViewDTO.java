@@ -1,7 +1,6 @@
 package com.coursework.clickboard.Models.DTO.User;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.coursework.clickboard.Models.DTO.Order.OrderViewDTO;
 import com.coursework.clickboard.Models.Database.User.User;
 
 import java.util.List;
@@ -15,7 +14,6 @@ public class UserViewDTO {
     @JsonProperty("isChildModeEnabled")
     private boolean isChildModeEnabled;
     private boolean areNotificationsEnabled;
-    private List<OrderViewDTO> orderList;
 
     public UserViewDTO(){
 
@@ -29,7 +27,6 @@ public class UserViewDTO {
         this.isTwoFactorEnabled = user.isTwoFactorEnabled();
         this.isChildModeEnabled = user.isChildModeEnabled();
         this.areNotificationsEnabled = user.isAreNotificationsEnabled();
-        this.orderList = user.getOrderList().stream().map(OrderViewDTO::new).toList();
     }
 
 
@@ -85,9 +82,6 @@ public class UserViewDTO {
 //        return shoppingCart;
 //    }
 
-    public List<OrderViewDTO> getOrderList() {
-        return orderList;
-    }
 
 //    public List<NotificationDTO> getNotificationList() {
 //        return notificationList;
